@@ -1,9 +1,11 @@
 from django.db import models
-
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# -----------------------------
+# UserProfile Model for Role-Based Access
+# -----------------------------
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('Admin', 'Admin'),
@@ -17,18 +19,20 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.role}"
 
 
-# Signal to automatically create a UserProfile when a User is created
+# Signals to automatically create UserProfile
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        # default role: Member
         UserProfile.objects.create(user=instance, role='Member')
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.userprofile.save()
 
-# Author model
+
+# -----------------------------
+# Author Model
+# -----------------------------
 class Author(models.Model):
     name = models.CharField(max_length=255)
 
@@ -36,16 +40,28 @@ class Author(models.Model):
         return self.name
 
 
-# Book model with ForeignKey to Author
+# -----------------------------
+# Book Model with Custom Permissions
+# -----------------------------
 class Book(models.Model):
     title = models.CharField(max_length=255)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books')
+    publication_year = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        permissions = [
+            ("can_add_book", "Can add book"),
+            ("can_change_book", "Can change book"),
+            ("can_delete_book", "Can delete book"),
+        ]
 
     def __str__(self):
-        return self.title
+        return f"{self.title} by {self.author.name}"
 
 
-# Library model with ManyToManyField to Book
+# -----------------------------
+# Library Model
+# -----------------------------
 class Library(models.Model):
     name = models.CharField(max_length=255)
     books = models.ManyToManyField(Book, related_name='libraries')
@@ -54,7 +70,9 @@ class Library(models.Model):
         return self.name
 
 
-# Librarian model with OneToOneField to Library
+# -----------------------------
+# Librarian Model
+# -----------------------------
 class Librarian(models.Model):
     name = models.CharField(max_length=255)
     library = models.OneToOneField(Library, on_delete=models.CASCADE, related_name='librarian')

@@ -1,14 +1,11 @@
-
-from django.views.generic import DetailView
-from .models import Book, Library 
-from .models import Library # Must import Library
-from django.views.generic.detail import DetailView
-from django.contrib.auth.decorators import user_passes_test
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
+from django.views.generic.detail import DetailView
+
+from .models import Book, Library  # Import Book and Library models
 
 # -----------------------------
 # User Registration View
@@ -26,7 +23,7 @@ def register_view(request):
     return render(request, 'relationship_app/register.html', {'form': form})
 
 # -----------------------------
-# User Login View
+# Function-Based Login View
 # -----------------------------
 def login_view(request):
     if request.method == 'POST':
@@ -41,30 +38,31 @@ def login_view(request):
     return render(request, 'relationship_app/login.html', {'form': form})
 
 # -----------------------------
-# User Logout View
+# Function-Based Logout View
 # -----------------------------
 def logout_view(request):
     logout(request)
     messages.info(request, "You have been logged out.")
     return render(request, 'relationship_app/logout.html')
 
-
-# Function-based view to list all books
+# -----------------------------
+# Function-Based View to List All Books
+# -----------------------------
 def list_books(request):
     books = Book.objects.all()
     return render(request, 'relationship_app/list_books.html', {'books': books})
 
-# Class-based view to show library details
+# -----------------------------
+# Class-Based View to Show Library Details
+# -----------------------------
 class LibraryDetailView(DetailView):
-    model = Library  # Use DetailView
+    model = Library
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
 
-
-
-
-
-# Helper functions to check roles
+# -----------------------------
+# Role Check Helper Functions
+# -----------------------------
 def is_admin(user):
     return hasattr(user, 'userprofile') and user.userprofile.role == 'Admin'
 
@@ -74,17 +72,17 @@ def is_librarian(user):
 def is_member(user):
     return hasattr(user, 'userprofile') and user.userprofile.role == 'Member'
 
-# Admin view
+# -----------------------------
+# Role-Based Views
+# -----------------------------
 @user_passes_test(is_admin)
 def admin_view(request):
     return render(request, 'relationship_app/admin_view.html')
 
-# Librarian view
 @user_passes_test(is_librarian)
 def librarian_view(request):
     return render(request, 'relationship_app/librarian_view.html')
 
-# Member view
 @user_passes_test(is_member)
 def member_view(request):
     return render(request, 'relationship_app/member_view.html')
