@@ -1,6 +1,6 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.views.generic import DetailView
-from .models import Book, Library  # <-- Library must be imported
+from .models import Book, Library  # <-- must include Library
 
 # Function-based view to list all books
 def list_books(request):
@@ -9,6 +9,6 @@ def list_books(request):
 
 # Class-based view to show library details
 class LibraryDetailView(DetailView):
-    model = Library  # <-- Uses DetailView
+    model = Library  # <-- must use DetailView
     template_name = 'relationship_app/library_detail.html'
     context_object_name = 'library'
