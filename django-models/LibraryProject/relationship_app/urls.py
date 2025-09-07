@@ -1,6 +1,6 @@
 from django.urls import path
-from relationship_app.views import add_book
-from relationship_app.views import edit_book
+from relationship_app.views import add_book, edit_book
+
 from relationship_app.views import(
     register_view, login_view, logout_view,
     list_books, add_book, edit_book, delete_book,
