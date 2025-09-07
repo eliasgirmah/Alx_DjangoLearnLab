@@ -1,33 +1,30 @@
 from django.urls import path
-from . import views
+from relationship_app.views import (
+    register_view, login_view, logout_view,
+    list_books, add_book, edit_book, delete_book,
+    LibraryDetailView,
+    admin_view, librarian_view, member_view
+)
 
 app_name = 'relationship_app'
 
 urlpatterns = [
-    # -----------------------------
     # Authentication URLs
-    # -----------------------------
-    path('register/', views.register_view, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path('register/', register_view, name='register'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
 
-    # -----------------------------
-    # Book Views
-    # -----------------------------
-    path('books/', views.list_books, name='list_books'),
-    path('books/add/', views.add_book, name='add_book'),               # <-- add_book
-    path('books/<int:pk>/edit/', views.edit_book, name='edit_book'),   # <-- edit_book
-    path('books/<int:pk>/delete/', views.delete_book, name='delete_book'),
+    # Book URLs
+    path('books/', list_books, name='list_books'),
+    path('books/add/', add_book, name='add_book'),
+    path('books/<int:pk>/edit/', edit_book, name='edit_book'),
+    path('books/<int:pk>/delete/', delete_book, name='delete_book'),
 
-    # -----------------------------
-    # Library Views
-    # -----------------------------
-    path('library/<int:pk>/', views.LibraryDetailView.as_view(), name='library_detail'),
+    # Library Detail
+    path('library/<int:pk>/', LibraryDetailView.as_view(), name='library_detail'),
 
-    # -----------------------------
     # Role-Based Views
-    # -----------------------------
-    path('admin-view/', views.admin_view, name='admin_view'),
-    path('librarian-view/', views.librarian_view, name='librarian_view'),
-    path('member-view/', views.member_view, name='member_view'),
+    path('admin-view/', admin_view, name='admin_view'),
+    path('librarian-view/', librarian_view, name='librarian_view'),
+    path('member-view/', member_view, name='member_view'),
 ]
