@@ -1,23 +1,22 @@
 import os
-import django
 import sys
+import django
 
-
+# Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LibraryProject.settings')
 django.setup()
 
 from relationship_app.models import Author, Book, Library, Librarian
 
 # -----------------------------
-# 1️⃣ Query all books by a specific author
+# 1️⃣ Query all books by a specific author using filter()
 # -----------------------------
 def books_by_author(author_name):
     try:
         author = Author.objects.get(name=author_name)
-        books = author.books.all()  # related_name from Book model
+        books = Book.objects.filter(author=author)  # <-- using filter
         print(f"Books by {author_name}:")
         for book in books:
             print(f"- {book.title}")
