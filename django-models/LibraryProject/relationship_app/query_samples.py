@@ -16,7 +16,7 @@ from relationship_app.models import Author, Book, Library, Librarian
 def books_by_author(author_name):
     try:
         author = Author.objects.get(name=author_name)
-        books = Book.objects.filter(author=author)  # <-- using filter
+        books = Book.objects.filter(author=author)  # explicit query
         print(f"Books by {author_name}:")
         for book in books:
             print(f"- {book.title}")
@@ -37,12 +37,12 @@ def books_in_library(library_name):
         print(f"No library found with name: {library_name}")
 
 # -----------------------------
-# 3️⃣ Retrieve the librarian for a library
+# 3️⃣ Retrieve the librarian for a library using Librarian.objects.get()
 # -----------------------------
 def librarian_for_library(library_name):
     try:
         library = Library.objects.get(name=library_name)
-        librarian = library.librarian  # OneToOne relation
+        librarian = Librarian.objects.get(library=library)  # explicit query
         print(f"Librarian for '{library_name}': {librarian.name}")
     except Library.DoesNotExist:
         print(f"No library found with name: {library_name}")
