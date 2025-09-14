@@ -5,7 +5,8 @@ from .forms import BookForm
 
 from django.shortcuts import render, get_object_or_404
 from .models import Book
-from .forms import BookForm
+
+from .forms import BookForm, ExampleForm  
 from django.contrib.auth.decorators import login_required, permission_required
 
 # Safe search view
