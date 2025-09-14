@@ -1,36 +1,37 @@
 """
 Security Measures Implemented:
 
-1. DEBUG=False to prevent information leakage.
-2. SECURE_BROWSER_XSS_FILTER=True and SECURE_CONTENT_TYPE_NOSNIFF=True to prevent XSS and MIME-type attacks.
-3. CSRF_COOKIE_SECURE and SESSION_COOKIE_SECURE set to True to ensure cookies are only sent over HTTPS.
-4. X_FRAME_OPTIONS='DENY' to prevent clickjacking.
-5. CSP middleware added to control content sources and mitigate XSS.
-6. Views use Django ORM to prevent SQL injection.
-7. All forms include {% csrf_token %} to protect against CSRF attacks.
+1. DEBUG=False to prevent information leakage in production.
+2. SECURE_BROWSER_XSS_FILTER=True and SECURE_CONTENT_TYPE_NOSNIFF=True 
+   to protect against XSS and MIME-type attacks.
+3. CSRF_COOKIE_SECURE=True and SESSION_COOKIE_SECURE=True 
+   to ensure cookies are transmitted only over HTTPS.
+4. X_FRAME_OPTIONS='DENY' to prevent clickjacking attacks.
+5. CSP middleware is added (django-csp) to control content sources and mitigate XSS risks.
+6. Views use Django ORM to prevent SQL injection by safely handling user input.
+7. All forms include {% csrf_token %} in templates to protect against CSRF attacks.
+8. SECURE_SSL_REDIRECT=True forces all HTTP traffic to HTTPS.
+9. SECURE_HSTS_SECONDS, SECURE_HSTS_INCLUDE_SUBDOMAINS, and SECURE_HSTS_PRELOAD 
+   enforce HSTS to ensure browsers access the site only via HTTPS.
 """
-
 
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# -------------------------
+# Base Directory
+# -------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
+# -------------------------
+# Security & Deployment
+# -------------------------
 SECRET_KEY = 'django-insecure-!l&fe&tgto*dxyq0a%_as^n$u1wa&8g0ey704qyxzchl+6f&ke'
+DEBUG = False  # Never leave DEBUG=True in production
+ALLOWED_HOSTS = ['yourdomain.com']  # Replace with your production domain
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
-# Application definition
-
+# -------------------------
+# Installed Apps
+# -------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,26 +39,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'bookshelf',
     'relationship_app',
+
+    'csp',  # Content Security Policy
 ]
 
-INSTALLED_APPS += [
-    'csp',
-]
-
-MIDDLEWARE += [
-    'csp.middleware.CSPMiddleware',
-]
-
-# Example CSP policy
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "https://cdnjs.cloudflare.com")
-CSP_STYLE_SRC = ("'self'", "https://cdnjs.cloudflare.com")
-
-# Tell Django to use our custom user model
-AUTH_USER_MODEL = "bookshelf.CustomUser"
-
+# -------------------------
+# Middleware
+# -------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -66,8 +57,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'csp.middleware.CSPMiddleware',  # CSP Middleware
 ]
 
+# -------------------------
+# URL & Templates
+# -------------------------
 ROOT_URLCONF = 'LibraryProject.urls'
 
 TEMPLATES = [
@@ -87,10 +83,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'LibraryProject.wsgi.application'
 
-
+# -------------------------
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# -------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -98,63 +93,57 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# -------------------------
+# Password Validation
+# -------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
+# -------------------------
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# -------------------------
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# -------------------------
+# Static Files
+# -------------------------
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# -------------------------
+# Default Primary Key Field
+# -------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # -------------------------
-# Production Security Settings
+# Custom User Model
 # -------------------------
-DEBUG = False  # Never leave DEBUG=True in production
+AUTH_USER_MODEL = 'bookshelf.CustomUser'
 
-# Browser Security
-SECURE_BROWSER_XSS_FILTER = True         # Enables XSS filter in the browser
-SECURE_CONTENT_TYPE_NOSNIFF = True       # Prevents MIME-type sniffing
-X_FRAME_OPTIONS = 'DENY'                 # Prevent clickjacking
-
-# Cookies Security
-CSRF_COOKIE_SECURE = True                # Ensures CSRF cookie is sent over HTTPS only
-SESSION_COOKIE_SECURE = True             # Ensures session cookie is sent over HTTPS only
-
-# Optional: HSTS (HTTP Strict Transport Security)
-SECURE_HSTS_SECONDS = 3600               # Enforce HTTPS for 1 hour
+# -------------------------
+# HTTPS / SSL / Security
+# -------------------------
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# -------------------------
+# Content Security Policy (CSP)
+# -------------------------
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "https://cdnjs.cloudflare.com")
+CSP_STYLE_SRC = ("'self'", "https://cdnjs.cloudflare.com")
