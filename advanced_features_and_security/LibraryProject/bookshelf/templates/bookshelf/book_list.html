@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Book List</h2>
+
+<form method="get" action="{% url 'book_search' %}">
+    {% csrf_token %}  <!-- Optional for GET, but safe to include -->
+    <input type="text" name="q" placeholder="Search by title" value="{{ request.GET.q|default_if_none:'' }}">
+    <button type="submit">Search</button>
+</form>
+
+<ul>
+    {% for book in books %}
+        <li>
+            {{ book.title|escape }} by {{ book.author|escape }} ({{ book.published_year }})
+            {% if perms.bookshelf.can_edit %}
+                <a href="{% url 'book_edit' book.pk %}">Edit</a>
+            {% endif %}
+            {% if perms.bookshelf.can_delete %}
+                <a href="{% url 'book_delete' book.pk %}">Delete</a>
+            {% endif %}
+        </li>
+    {% empty %}
+        <li>No books found.</li>
+    {% endfor %}
+</ul>
+
+{% if perms.bookshelf.can_create %}
+    <a href="{% url 'book_create' %}">Add New Book</a>
+{% endif %}
+
+{% endblock %}

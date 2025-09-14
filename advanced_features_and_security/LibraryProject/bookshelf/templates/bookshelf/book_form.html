@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Book</h2>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}  <!-- CSRF protection -->
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>
+
+<a href="{% url 'book_list' %}">Back to Book List</a>
+{% endblock %}
