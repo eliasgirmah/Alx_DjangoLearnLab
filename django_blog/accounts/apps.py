@@ -1,3 +1,4 @@
+# accounts/apps.py
 from django.apps import AppConfig
 
 class AccountsConfig(AppConfig):
@@ -5,4 +6,5 @@ class AccountsConfig(AppConfig):
     name = 'accounts'
 
     def ready(self):
-        import accounts.models  # ensures signals are loaded
+        # import signals so they are registered
+        import accounts.signals  # noqa

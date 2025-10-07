@@ -1,21 +1,18 @@
-{% extends "base.html" %}
-
+{% extends 'accounts/base.html' %}
+{% block title %}Your profile{% endblock %}
 {% block content %}
-<h2>Profile</h2>
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <label>Email:</label>
-    <input type="email" name="email" value="{{ user.email }}"><br><br>
-
-    <label>Bio:</label>
-    <textarea name="bio">{{ profile.bio }}</textarea><br><br>
-
-    <label>Profile Picture:</label>
-    <input type="file" name="profile_picture"><br><br>
-    {% if profile.profile_picture %}
-        <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" width="100">
-    {% endif %}
-
-    <button type="submit">Update Profile</button>
+<h2>Your profile</h2>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <label>Username (readonly): <input value="{{ request.user.username }}" readonly></label><br>
+  <label>Email: <input name="email" value="{{ request.user.email }}"></label><br>
+  {{ form.as_p }}
+  <button type="submit">Save</button>
 </form>
+
+{% if profile.profile_picture %}
+  <img src="{{ profile.profile_picture.url }}" alt="profile" width="150">
+{% else %}
+  <p>No profile image.</p>
+{% endif %}
 {% endblock %}
