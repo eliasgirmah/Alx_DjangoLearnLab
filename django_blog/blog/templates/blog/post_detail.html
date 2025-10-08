@@ -1,0 +1,8 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<h2>{{ object.title }}</h2>
+<p>{{ object.content }}</p>
+<p>Author: {{ object.author.username }}</p>
+<a href="{% url 'post-update' object.pk %}">Edit</a>
+<a href="{% url 'post-delete' object.pk %}">Delete</a>
+{% endblock %}

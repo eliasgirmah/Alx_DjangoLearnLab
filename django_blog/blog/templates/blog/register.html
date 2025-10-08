@@ -1,14 +1,10 @@
-{% extends 'base.html' %}
+{% extends "blog/base.html" %}
+
 {% block content %}
 <h2>Register</h2>
-
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Register</button>
 </form>
-
-{% if form.errors %}
-<p style="color:red;">Please correct the errors below.</p>
-{% endif %}
 {% endblock %}

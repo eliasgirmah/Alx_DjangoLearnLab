@@ -1,0 +1,10 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<h2>Welcome to Django Blog</h2>
+{% if user.is_authenticated %}
+<p>Hello, {{ user.username }}!</p>
+{% else %}
+<p>Please log in or register.</p>
+{% endif %}
+{% endblock %}
