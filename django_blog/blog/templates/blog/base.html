@@ -4,6 +4,11 @@
 <head>
     <title>Django Blog</title>
     <link rel="stylesheet" href="{% static 'blog/css/style.css' %}">
+  <form method="get" action="{% url 'search' %}" class="search-form">
+  <input type="text" name="q" placeholder="Search posts..." value="{{ request.GET.q|default:'' }}">
+  <button type="submit">Search</button>
+</form>
+
 </head>
 <body>
     <nav>

@@ -7,4 +7,20 @@
   <button type="submit">Save</button>
 </form>
 <a href="{% url 'post-list' %}">Cancel</a>
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div>
+    {{ form.title.label_tag }} {{ form.title }}
+  </div>
+  <div>
+    {{ form.content.label_tag }} {{ form.content }}
+  </div>
+  <div>
+    {{ form.tags.label_tag }} {{ form.tags }}
+    <small>{{ form.tags.help_text }}</small>
+  </div>
+  <button type="submit">Save</button>
+</form>
+
 {% endblock %}
