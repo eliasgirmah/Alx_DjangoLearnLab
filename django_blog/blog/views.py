@@ -4,23 +4,29 @@ from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth import login, logout
+from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Q
-from .models import Post, Comment, Tag
+
+from taggit.models import Tag
+
+from .models import Post, Comment
 from .forms import PostForm, CommentForm
 
+
+# -------------------------
+# 🧑 USER PROFILE VIEW
+# -------------------------
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.contrib.auth.views import LoginView, LogoutView
+
 @login_required
 def profile_view(request):
     return render(request, 'blog/profile.html')
 
+
 # -------------------------
 # 📰 POST VIEWS
 # -------------------------
-
 class PostListView(ListView):
     model = Post
     template_name = 'blog/post_list.html'
@@ -28,26 +34,6 @@ class PostListView(ListView):
     ordering = ['-published_date']
     paginate_by = 10
 
-from django.views.generic import ListView
-from django.shortcuts import get_object_or_404
-from taggit.models import Tag
-from .models import Post
-
-
-class TagPostListView(ListView):
-    model = Post
-    template_name = 'blog/post_list.html'  # reuse the same template as PostListView
-    context_object_name = 'posts'
-
-    def get_queryset(self):
-        tag_name = self.kwargs.get('tag_name')
-        tag = get_object_or_404(Tag, name=tag_name)
-        return Post.objects.filter(tags__in=[tag]).distinct()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['tag_name'] = self.kwargs.get('tag_name')
-        return context
 
 class PostDetailView(DetailView):
     model = Post
@@ -63,7 +49,6 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         response = super().form_valid(form)
-        # handle tags after saving post
         tag_names = form.cleaned_data.get('tags') or []
         if tag_names:
             tag_objs = []
@@ -117,7 +102,6 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 # -------------------------
 # 💬 COMMENT VIEWS
 # -------------------------
-
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
@@ -153,18 +137,18 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 # -------------------------
-# 🏷️ TAG & SEARCH VIEWS
+# 🏷 TAG VIEWS
 # -------------------------
-
-class TagListView(ListView):
+class TagPostListView(ListView):
     model = Post
-    template_name = "blog/tag_posts.html"
-    context_object_name = "posts"
+    template_name = 'blog/post_list.html'
+    context_object_name = 'posts'
     paginate_by = 10
 
     def get_queryset(self):
         tag_slug = self.kwargs.get('tag_slug')
-        return Post.objects.filter(tags__slug=tag_slug).order_by('-published_date')
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        return Post.objects.filter(tags__slug=tag_slug).distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -172,6 +156,9 @@ class TagListView(ListView):
         return context
 
 
+# -------------------------
+# 🔍 SEARCH VIEW
+# -------------------------
 def search_view(request):
     query = request.GET.get('q', '').strip()
     posts = Post.objects.none()
@@ -188,8 +175,7 @@ def search_view(request):
 # -------------------------
 # 🔐 AUTHENTICATION VIEWS
 # -------------------------
-
-
+from django.contrib.auth.views import LoginView, LogoutView
 
 class LoginViewCustom(LoginView):
     template_name = 'blog/login.html'
@@ -209,26 +195,3 @@ def register_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'blog/register.html', {'form': form})
-
-from django.db.models import Q
-from taggit.models import Tag
-
-def search_view(request):
-    query = request.GET.get('q', '')
-    results = []
-    if query:
-        results = Post.objects.filter(
-            Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            Q(tags__name__icontains=query)
-        ).distinct()
-    return render(request, 'blog/search_results.html', {'query': query, 'results': results})
-
-
-def tagged_posts_view(request, tag_slug=None):
-    tag = None
-    posts = Post.objects.all()
-    if tag_slug:
-        tag = Tag.objects.get(slug=tag_slug)
-        posts = posts.filter(tags__in=[tag])
-    return render(request, 'blog/tagged_posts.html', {'tag': tag, 'posts': posts})
