@@ -12,7 +12,7 @@ from .forms import PostForm, CommentForm
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-
+from django.contrib.auth.views import LoginView, LogoutView
 @login_required
 def profile_view(request):
     return render(request, 'blog/profile.html')
@@ -28,6 +28,26 @@ class PostListView(ListView):
     ordering = ['-published_date']
     paginate_by = 10
 
+from django.views.generic import ListView
+from django.shortcuts import get_object_or_404
+from taggit.models import Tag
+from .models import Post
+
+
+class TagPostListView(ListView):
+    model = Post
+    template_name = 'blog/post_list.html'  # reuse the same template as PostListView
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        tag_name = self.kwargs.get('tag_name')
+        tag = get_object_or_404(Tag, name=tag_name)
+        return Post.objects.filter(tags__in=[tag]).distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tag_name'] = self.kwargs.get('tag_name')
+        return context
 
 class PostDetailView(DetailView):
     model = Post
@@ -169,7 +189,6 @@ def search_view(request):
 # 🔐 AUTHENTICATION VIEWS
 # -------------------------
 
-from django.contrib.auth.views import LoginView, LogoutView
 
 
 class LoginViewCustom(LoginView):
@@ -190,3 +209,26 @@ def register_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'blog/register.html', {'form': form})
+
+from django.db.models import Q
+from taggit.models import Tag
+
+def search_view(request):
+    query = request.GET.get('q', '')
+    results = []
+    if query:
+        results = Post.objects.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()
+    return render(request, 'blog/search_results.html', {'query': query, 'results': results})
+
+
+def tagged_posts_view(request, tag_slug=None):
+    tag = None
+    posts = Post.objects.all()
+    if tag_slug:
+        tag = Tag.objects.get(slug=tag_slug)
+        posts = posts.filter(tags__in=[tag])
+    return render(request, 'blog/tagged_posts.html', {'tag': tag, 'posts': posts})
