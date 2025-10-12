@@ -9,14 +9,15 @@ from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly
 
 
+# Standard pagination for all list endpoints
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
+# CRUD + Like/Unlike for Posts
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.select_related('author').prefetch_related('likes').all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     pagination_class = StandardResultsSetPagination
@@ -24,6 +25,10 @@ class PostViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'content']
     filterset_fields = ['author__id', 'author__username']
     ordering_fields = ['created_at', 'updated_at']
+
+    def get_queryset(self):
+        # Prefetch likes and author for efficiency
+        return Post.objects.select_related('author').prefetch_related('likes').all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -41,8 +46,8 @@ class PostViewSet(viewsets.ModelViewSet):
             return Response({'status': 'post liked'}, status=status.HTTP_200_OK)
 
 
+# CRUD + Like/Unlike for Comments
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.select_related('author', 'post').prefetch_related('likes').all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     pagination_class = StandardResultsSetPagination
@@ -50,6 +55,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     search_fields = ['content']
     filterset_fields = ['post', 'author__id', 'author__username']
     ordering_fields = ['created_at', 'updated_at']
+
+    def get_queryset(self):
+        # Prefetch likes and author/post for efficiency
+        return Comment.objects.select_related('author', 'post').prefetch_related('likes').all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
