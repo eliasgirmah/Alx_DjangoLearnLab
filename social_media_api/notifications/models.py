@@ -1,16 +1,22 @@
 from django.conf import settings
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 User = settings.AUTH_USER_MODEL
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
-    verb = models.CharField(max_length=255)
-    target_post = models.ForeignKey('posts.Post', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
-    target_comment = models.ForeignKey('posts.Comment', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actor_notifications')
+    verb = models.CharField(max_length=255)  # e.g., "liked", "commented on", "followed"
+    target_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    target = GenericForeignKey('target_ct', 'target_id')
     read = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-timestamp']
+
     def __str__(self):
-        return f"{self.actor} {self.verb} -> {self.recipient}"
+        return f'{self.actor} {self.verb} {self.target} → {self.recipient}'

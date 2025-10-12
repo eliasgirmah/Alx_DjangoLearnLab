@@ -5,10 +5,12 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
 
-from .models import Post, Comment
+from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly
+from notifications.models import Notification  # for generating notifications
 
 # ---------------------------
 # Pagination
@@ -22,7 +24,6 @@ class StandardResultsSetPagination(PageNumberPagination):
 # Post ViewSet
 # ---------------------------
 class PostViewSet(viewsets.ModelViewSet):
-    # Required for automated checks
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
@@ -38,22 +39,10 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request, pk=None):
-        post = self.get_object()
-        user = request.user
-        if user in post.likes.all():
-            post.likes.remove(user)
-            return Response({'status': 'post unliked'}, status=status.HTTP_200_OK)
-        else:
-            post.likes.add(user)
-            return Response({'status': 'post liked'}, status=status.HTTP_200_OK)
-
 # ---------------------------
 # Comment ViewSet
 # ---------------------------
 class CommentViewSet(viewsets.ModelViewSet):
-    # Required for automated checks
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
@@ -69,18 +58,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request, pk=None):
-        comment = self.get_object()
-        user = request.user
-        if user in comment.likes.all():
-            comment.likes.remove(user)
-            return Response({'status': 'comment unliked'}, status=status.HTTP_200_OK)
-        else:
-            comment.likes.add(user)
-            return Response({'status': 'comment liked'}, status=status.HTTP_200_OK)
-
-# ---------------------------
 # ---------------------------
 # Feed View
 # ---------------------------
@@ -94,3 +71,39 @@ class FeedView(APIView):
         posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
+
+# ---------------------------
+# Like/Unlike Post
+# ---------------------------
+class LikePostView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+        if created:
+            # Create notification for post author
+            if post.author != request.user:
+                Notification.objects.create(
+                    recipient=post.author,
+                    actor=request.user,
+                    verb="liked your post",
+                    target_object=post
+                )
+            return Response({"detail": "Post liked."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"detail": "You have already liked this post."}, status=status.HTTP_400_BAD_REQUEST)
+
+class UnlikePostView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        like = Like.objects.filter(user=request.user, post=post).first()
+
+        if like:
+            like.delete()
+            return Response({"detail": "Post unliked."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "You have not liked this post yet."}, status=status.HTTP_400_BAD_REQUEST)
