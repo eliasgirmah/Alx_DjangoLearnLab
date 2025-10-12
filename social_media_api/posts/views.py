@@ -1,24 +1,26 @@
-# posts/views.py
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, permissions, filters, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import get_object_or_404
 
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly
 from notifications.models import Notification
 
+# ---------------------------
 # Pagination
+# ---------------------------
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+# ---------------------------
 # Post ViewSet
+# ---------------------------
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -35,7 +37,9 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+# ---------------------------
 # Comment ViewSet
+# ---------------------------
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -52,7 +56,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+# ---------------------------
 # Feed View
+# ---------------------------
 class FeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -63,12 +69,14 @@ class FeedView(APIView):
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
-# Like/Unlike Post
+# ---------------------------
+# Like / Unlike Posts using generics.get_object_or_404
+# ---------------------------
 class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)
+        post = generics.get_object_or_404(Post, pk=pk)
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
         if created:
@@ -80,18 +88,16 @@ class LikePostView(APIView):
                     target_object=post
                 )
             return Response({"detail": "Post liked."}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"detail": "You have already liked this post."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "You have already liked this post."}, status=status.HTTP_400_BAD_REQUEST)
 
 class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)
+        post = generics.get_object_or_404(Post, pk=pk)
         like = Like.objects.filter(user=request.user, post=post).first()
 
         if like:
             like.delete()
             return Response({"detail": "Post unliked."}, status=status.HTTP_200_OK)
-        else:
-            return Response({"detail": "You have not liked this post yet."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "You have not liked this post yet."}, status=status.HTTP_400_BAD_REQUEST)
