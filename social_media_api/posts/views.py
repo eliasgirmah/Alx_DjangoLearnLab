@@ -1,6 +1,5 @@
 # posts/views.py
 from rest_framework import viewsets, permissions, filters, status
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
@@ -73,7 +72,7 @@ class FeedView(APIView):
         return Response(serializer.data)
 
 # ---------------------------
-# Like/Unlike Post
+# Like/Unlike Post Views
 # ---------------------------
 class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
