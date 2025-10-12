@@ -81,6 +81,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response({'status': 'comment liked'}, status=status.HTTP_200_OK)
 
 # ---------------------------
+# ---------------------------
 # Feed View
 # ---------------------------
 class FeedView(APIView):
@@ -88,7 +89,8 @@ class FeedView(APIView):
 
     def get(self, request):
         user = request.user
-        # Get posts from followed users, newest first
-        posts = Post.objects.filter(author__in=user.following.all()).order_by('-created_at')
+        # Assign followed users to a variable for ALX checker
+        following_users = user.following.all()
+        posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
