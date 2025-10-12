@@ -1,23 +1,31 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from .models import CustomUser  # ✅ Correct model
+from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from .serializers import RegisterSerializer, LoginSerializer
-from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
+# -------------------------
+# Auth & Profile Views
+# -------------------------
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
+
 class LoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
 
+
 class ProfileView(APIView):
-    authentication_classes = [TokenAuthentication]  # <-- Required!
+    authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -30,14 +38,12 @@ class ProfileView(APIView):
             "token": token.key
         })
 
-# accounts/views.py
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from .models import User  # assuming your custom user model is User
 
+# -------------------------
+# Follow / Unfollow Views
+# -------------------------
 class FollowUserView(generics.GenericAPIView):
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()  # ✅ Use CustomUser
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, user_id):
@@ -49,7 +55,7 @@ class FollowUserView(generics.GenericAPIView):
 
 
 class UnfollowUserView(generics.GenericAPIView):
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()  # ✅ Use CustomUser
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, user_id):
