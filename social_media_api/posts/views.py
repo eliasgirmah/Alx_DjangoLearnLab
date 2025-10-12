@@ -1,23 +1,29 @@
+# posts/views.py
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly
 
-
+# ---------------------------
+# Pagination
+# ---------------------------
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
+# ---------------------------
+# Post ViewSet
+# ---------------------------
 class PostViewSet(viewsets.ModelViewSet):
     # Required for automated checks
-    queryset = Post.objects.all()  
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     pagination_class = StandardResultsSetPagination
@@ -27,7 +33,6 @@ class PostViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'updated_at']
 
     def get_queryset(self):
-        # Optimized query
         return Post.objects.select_related('author').prefetch_related('likes').all()
 
     def perform_create(self, serializer):
@@ -35,7 +40,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
-        """Like or unlike a post"""
         post = self.get_object()
         user = request.user
         if user in post.likes.all():
@@ -45,7 +49,9 @@ class PostViewSet(viewsets.ModelViewSet):
             post.likes.add(user)
             return Response({'status': 'post liked'}, status=status.HTTP_200_OK)
 
-
+# ---------------------------
+# Comment ViewSet
+# ---------------------------
 class CommentViewSet(viewsets.ModelViewSet):
     # Required for automated checks
     queryset = Comment.objects.all()
@@ -58,7 +64,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'updated_at']
 
     def get_queryset(self):
-        # Optimized query
         return Comment.objects.select_related('author', 'post').prefetch_related('likes').all()
 
     def perform_create(self, serializer):
@@ -66,7 +71,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
-        """Like or unlike a comment"""
         comment = self.get_object()
         user = request.user
         if user in comment.likes.all():
@@ -75,18 +79,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         else:
             comment.likes.add(user)
             return Response({'status': 'comment liked'}, status=status.HTTP_200_OK)
-# posts/views.py
-from rest_framework import permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Post
-from .serializers import PostSerializer
 
+# ---------------------------
+# Feed View
+# ---------------------------
 class FeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        # Get posts from followed users, newest first
         posts = Post.objects.filter(author__in=user.following.all()).order_by('-created_at')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
