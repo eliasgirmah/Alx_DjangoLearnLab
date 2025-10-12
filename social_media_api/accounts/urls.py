@@ -1,13 +1,15 @@
-# accounts/urls.py
 from django.urls import path
-from .views import RegisterView, LoginView
-from django.conf import settings
+from django.conf import settings      
 from django.conf.urls.static import static
+from . import views
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    #path('profile/', ProfileView.as_view(), name='profile'),
 ]
+
 
 # in development, serve media
 if settings.DEBUG:
