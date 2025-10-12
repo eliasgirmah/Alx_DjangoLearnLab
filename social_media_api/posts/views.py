@@ -1,5 +1,6 @@
 # posts/views.py
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
@@ -9,19 +10,15 @@ from django.shortcuts import get_object_or_404
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly
-from notifications.models import Notification  # for generating notifications
+from notifications.models import Notification
 
-# ---------------------------
 # Pagination
-# ---------------------------
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-# ---------------------------
 # Post ViewSet
-# ---------------------------
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -38,9 +35,7 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-# ---------------------------
 # Comment ViewSet
-# ---------------------------
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -57,23 +52,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-# ---------------------------
 # Feed View
-# ---------------------------
 class FeedView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        # Assign followed users to a variable for ALX checker
         following_users = user.following.all()
         posts = Post.objects.filter(author__in=following_users).order_by('-created_at')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
-# ---------------------------
-# Like/Unlike Post Views
-# ---------------------------
+# Like/Unlike Post
 class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -82,7 +72,6 @@ class LikePostView(APIView):
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
         if created:
-            # Create notification for post author
             if post.author != request.user:
                 Notification.objects.create(
                     recipient=post.author,
